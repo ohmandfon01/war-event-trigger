@@ -1,17 +1,31 @@
-name: War Event Trigger Test
+name: War Event Trigger
 
 on:
   schedule:
-    - cron: "* * * * *"   # ทุก 1 นาที
+    - cron: "*/5 * * * *"   # ทุก 5 นาที
   workflow_dispatch:
 
 jobs:
-  send-test:
+  check-and-send:
     runs-on: ubuntu-latest
     steps:
-      - name: Send test message to Discord
+      - name: Check time and send alert
         run: |
-          curl -H "Content-Type: application/json" \
-          -X POST \
-          -d '{"content":"🔥 TEST ยิงจาก GitHub Actions สำเร็จ!"}' \
-          ${{ secrets.DISCORD_WEBHOOK }}
+          NOW_UTC_H=$(date -u +%H)
+          NOW_UTC_M=$(date -u +%M)
+
+          # แปลงเป็นเวลาไทย
+          H=$(( (10#$NOW_UTC_H + 7) % 24 ))
+          M=$((10#$NOW_UTC_M))
+
+          echo "Thai time: $H:$M"
+
+          # ถ้านาที = 30 → เตือน
+          if [ "$M" -eq 30 ]; then
+            curl -H "Content-Type: application/json" \
+            -X POST \
+            -d "{\"content\":\"⚔️ อีก 30 นาทีจะถึงเวลาวอ! (วอ $(( (H+1)%24 )):00)\"}" \
+            ${{ secrets.DISCORD_WEBHOOK }}
+          else
+            echo "ยังไม่ถึงเวลาเตือน"
+          fi
