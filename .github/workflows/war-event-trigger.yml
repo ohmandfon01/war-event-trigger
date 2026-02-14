@@ -1,24 +1,22 @@
-# Updated schedule trigger ⚔️ (force reload)
+# Force schedule debug mode ⏰
 
 name: War Event Trigger
 
 on:
   schedule:
-    - cron: "*/5 * * * *"   # รันทุก 5 นาที (UTC)
+    - cron: "*/5 * * * *"   # ทุก 5 นาที (UTC)
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  check-and-send:
+  send-time:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check time and send alert
+      - name: Send current Thai time to Discord
         run: |
-          echo "===== DEBUG TIME CHECK ====="
-
           NOW_UTC_H=$(date -u +%H)
           NOW_UTC_M=$(date -u +%M)
 
@@ -26,25 +24,10 @@ jobs:
           H=$(( (10#$NOW_UTC_H + 7) % 24 ))
           M=$((10#$NOW_UTC_M))
 
-          printf "Thai time now: %02d:%02d\n" $H $M
+          printf -v THAI_TIME "%02d:%02d" $H $M
+          echo "Thai time now: $THAI_TIME"
 
-          if [ -z "${{ secrets.DISCORD_WEBHOOK }}" ]; then
-            echo "❌ DISCORD_WEBHOOK is empty!"
-            exit 1
-          fi
-
-          # ถ้านาที = 30 → เตือน
-          if [ "$M" -eq 30 ]; then
-
-            NEXT_H=$(( (H + 1) % 24 ))
-            printf "🚀 Sending alert for war at %02d:00\n" $NEXT_H
-
-            curl -s -o /dev/null -w "%{http_code}" \
-              -H "Content-Type: application/json" \
-              -X POST \
-              -d "{\"content\":\"⚔️ อีก 30 นาทีจะถึงเวลาวอ! (วอ ${NEXT_H}:00)\"}" \
-              ${{ secrets.DISCORD_WEBHOOK }}
-
-          else
-            echo "⏳ ยังไม่ถึงเวลาเตือน"
-          fi
+          curl -H "Content-Type: application/json" \
+            -X POST \
+            -d "{\"content\":\"🕒 ระบบทำงานอยู่ ตอนนี้เวลาไทย ${THAI_TIME}\"}" \
+            ${{ secrets.DISCORD_WEBHOOK }}
