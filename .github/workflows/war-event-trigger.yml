@@ -1,24 +1,39 @@
-name: 5s Spam Test
+name: War Event Trigger
 
 on:
+  schedule:
+    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 jobs:
-  spam:
+  notify:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Send every 5 seconds
+      - name: Check Thai time and notify
         run: |
-          for i in {1..12}
-          do
-            NOW=$(date +%H:%M:%S)
-            echo "Sending at $NOW"
+          # เวลา UTC
+          UTC_H=$(date -u +%H)
+          UTC_M=$(date -u +%M)
+
+          # แปลงเป็นเวลาไทย (UTC+7)
+          H=$(( (10#$UTC_H + 7) % 24 ))
+          M=$((10#$UTC_M))
+
+          printf -v NOW "%02d:%02d" $H $M
+          echo "Thai time: $NOW"
+
+          # เตือนเฉพาะ 30 นาที ก่อนวอ
+          if [ "$M" -eq 30 ] && [ $((H % 2)) -eq 1 ]; then
+
+            WAR_H=$(( (H + 1) % 24 ))
+            printf -v WAR_TIME "%02d:00" $WAR_H
 
             curl -H "Content-Type: application/json" \
               -X POST \
-              -d "{\"content\":\"🔥 TEST ทุก 5 วิ เวลา $NOW\"}" \
+              -d "{\"content\":\"⚔️ อีก 30 นาทีจะถึงเวลาวอ!\n🕒 วอรอบ ${WAR_TIME}\"}" \
               ${{ secrets.DISCORD_WEBHOOK }}
 
-            sleep 5
-          done
+          else
+            echo "ยังไม่ถึงเวลาเตือน"
+          fi
