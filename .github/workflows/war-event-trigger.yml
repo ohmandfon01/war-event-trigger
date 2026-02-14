@@ -4,7 +4,7 @@ name: War Event Trigger
 
 on:
   schedule:
-    - cron: "*/0.5 * * * *"   # ทุก 5 นาที (UTC)
+    - cron: "*/0.1 * * * *"   # ทุก 5 นาที (UTC)
   workflow_dispatch:
 
 permissions:
